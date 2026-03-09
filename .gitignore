@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.python-version
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*.log
+
+# Docker
+*.pid
+*.sock
+*.pid.lock
+docker-compose.override.yml
+
+# Logstash
+/logstash/config/
+/logstash/pipeline/*.bak
+*.sincedb
+*.sincedb_*
+
+# Nginx
+/nginx/logs/
+*.pid
+
+# Elasticsearch
+/elasticsearch/data/
+/data/
+snapshots/
+
+# Kafka
+/kafka/data/
+/data/kafka/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.classpath
+.settings/
+
+# Project specific
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.local
+.env
+.env.local
+.env.*.local
+
+# Secrets and credentials
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
+credentials/

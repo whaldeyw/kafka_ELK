@@ -1,0 +1,255 @@
+## 📊 Инструкция: Как создавать графики в Kibana
+
+### Введение
+
+Kibana предлагает несколько способов создания визуализаций. Мы рассмотрим **Lens** — самый простой и мощный инструмент для создания графиков.
+
+---
+
+### 🎨 Шаг 1: Создание Data View (индекс-паттерна)
+
+Прежде чем создавать графики, нужно "познакомить" Kibana с вашими индексами.
+
+1. Откройте Kibana: http://localhost:5601
+2. Нажмите на **меню-бургер** ☰ слева вверху
+3. Перейдите в **Stack Management** → **Data Views**
+4. Нажмите **"Create data view"**
+
+**Для наших индексов создайте:**
+
+| Имя Data View | Индекс-паттерн | Поле времени |
+|---------------|----------------|--------------|
+| `Nginx Logs` | `nginx-logs-*` | `@timestamp` |
+| `Kafka Events (Logstash)` | `kafka-events-*` | `@timestamp` |
+| `App Events` | `app-events` | `@timestamp` |
+
+---
+
+### 📈 Шаг 2: Создание первого графика (Lens)
+
+1. В меню выберите **Analytics** → **Dashboard**
+2. Нажмите **"Create dashboard"**
+3. Нажмите **"Create visualization"**
+
+#### 📊 График 1: Количество запросов по времени
+
+1. В открывшемся редакторе Lens выберите Data View: **Nginx Logs**
+2. В правой панели **Config panel**:
+   - **Horizontal axis**: нажмите "Add or drag-and-drop a field"
+   - Выберите `@timestamp` (Date histogram)
+   - **Vertical axis**: нажмите "Add or drag-and-drop a field"
+   - Выберите **"Count of records"** (или "Count" в разделе Quick functions)
+3. Нажмите **"Update"**
+4. Нажмите **"Save and return"**
+5. Назовите: `Nginx Requests Over Time`
+
+#### 🥧 График 2: Круговая диаграмма кодов ответов
+
+1. **"Create visualization"**
+2. Data View: **Nginx Logs**
+3. В правой панели нажмите **"Add layer"** → выберите **"Pie"**
+4. **Slice by**: нажмите "Add or drag-and-drop a field" → выберите `response.keyword`
+5. **Size by**: оставьте `Count`
+6. Нажмите **"Update"** → **"Save and return"**
+7. Назовите: `HTTP Response Codes`
+
+#### 📋 График 3: Таблица топ IP-адресов
+
+1. **"Create visualization"**
+2. Data View: **Nginx Logs**
+3. Тип: **Table**
+4. **Rows**: Aggregation: `Terms` → Field: `clientip.keyword` → Size: `10`
+5. **Metrics**: `Count`
+6. Нажмите **"Update"** → **"Save and return"**
+7. Назовите: `Top 10 IP Addresses`
+
+#### 👥 График 4: Активность пользователей (из Kafka)
+
+1. **"Create visualization"**
+2. Data View: **App Events** или **Kafka Events**
+3. Тип: **Bar vertical**
+4. **Horizontal axis**: Aggregation: `Terms` → Field: `user.keyword` → Size: `10`
+5. **Vertical axis**: `Count`
+6. **Breakdown** (опционально): Aggregation: `Terms` → Field: `action.keyword`
+7. Нажмите **"Update"** → **"Save and return"**
+8. Назовите: `User Activity`
+
+#### 📊 График 5: События по типам
+
+1. **"Create visualization"**
+2. Data View: **App Events**
+3. Тип: **Bar horizontal**
+4. **Horizontal axis**: Aggregation: `Terms` → Field: `action.keyword` → Size: `10`
+5. **Vertical axis**: `Count`
+6. Нажмите **"Update"** → **"Save and return"**
+7. Назовите: `Events by Type`
+
+#### 🗺️ График 6: Карта мира (если есть geoip)
+
+Если в логах Nginx есть гео-данные:
+
+1. **"Create visualization"** → выберите **"Maps"**
+2. Нажмите **"Add layer"** → **"Choropleth"**
+3. Выберите Data View: **Nginx Logs**
+4. Настройте поле: `clientip` (Kibana автоматически определит гео-локацию)
+5. Нажмите **"Save and return"**
+
+---
+
+### 🎯 Шаг 3: Добавление фильтров и интерактивности
+
+#### Фильтр по времени
+Справа вверху дашборда всегда есть фильтр времени. Выберите:
+- **Last 15 minutes** — последние 15 минут
+- **Last hour** — последний час
+- **Last 7 days** — последние 7 дней
+
+#### Фильтр по значениям
+Кликните на любой элемент графика и выберите:
+- **"Filter for value"** — показать только это значение
+- **"Filter out value"** — исключить это значение
+
+Пример: кликните на столбик `404` в круговой диаграмме → выберите **"Filter for value"** → дашборд покажет только запросы с ошибкой 404.
+
+#### Сброс фильтров
+Чтобы сбросить все фильтры, нажмите на **крестик** в строке фильтров сверху.
+
+---
+
+### 🎨 Шаг 4: Создание дашборда
+
+1. Перетащите созданные визуализации мышкой в нужном порядке:
+   - Сверху: график запросов по времени (на всю ширину)
+   - Второй ряд: круговая диаграмма (слева) и таблица IP (справа)
+   - Третий ряд: график активности пользователей (слева) и события по типам (справа)
+   - Внизу: карта (если создали)
+
+2. Нажмите **"Save"** вверху справа
+   - Title: `Nginx + Kafka Monitoring`
+   - Description: `Мониторинг веб-сервера и бизнес-событий`
+   - Нажмите **"Save"**
+
+---
+
+### 📊 Типы визуализаций в Lens
+
+| Тип | Когда использовать |
+|-----|-------------------|
+| **Bar vertical** | Сравнение категорий, распределение |
+| **Bar horizontal** | Когда много категорий |
+| **Line** | Тренды во времени |
+| **Area** | Накопительные итоги |
+| **Pie / Donut** | Доли от целого |
+| **Table** | Детальные данные |
+| **Metric** | Ключевые показатели (числа) |
+| **Heat map** | Корреляции |
+| **Gauge** | Прогресс к цели |
+
+---
+
+### 🔍 Продвинутые настройки
+
+#### TSVB (Time Series Visual Builder)
+Для сложных временных рядов:
+
+1. В создании визуализации выберите **"TSVB"**
+2. Добавьте несколько линий:
+   - Среднее время ответа
+   - 95-й перцентиль
+   - Количество запросов
+
+#### Формулы
+В Lens можно писать формулы:
+
+```
+average(value) / max(value) * 100
+```
+
+#### Дашборд с разными Data Views
+На одном дашборде можно смешивать визуализации из разных индексов!
+
+---
+
+### 📝 Примеры запросов для поиска
+
+В **Discover** можно искать так:
+
+```kql
+# Все ошибки Nginx
+response >= 400
+
+# Конкретный пользователь
+user: "alice"
+
+# За последние 5 минут
+@timestamp >= now-5m
+
+# Сложный запрос
+response: 200 AND agent: "curl*"
+
+# Kafka события с высоким value
+value > 900 AND action: "payment"
+```
+
+---
+
+### 🎯 Шпаргалка по полям
+
+#### Nginx Logs (`nginx-logs-*`)
+- `clientip` — IP клиента
+- `method` — HTTP метод (GET, POST)
+- `request` — запрошенный URL
+- `response` — код ответа (200, 404, 500)
+- `agent` — User-Agent
+- `bytes` — размер ответа
+
+#### App Events (`app-events`)
+- `user` — имя пользователя (alice, bob, charlie, dave)
+- `action` — действие (user_login, payment, item_view)
+- `value` — числовое значение
+- `timestamp` — время события
+- `kafka_topic` — топик Kafka
+- `kafka_partition` — партиция
+- `kafka_offset` — оффсет
+
+#### Kafka Events (`kafka-events-*`)
+- Те же поля, что и в `app-events`
+
+---
+
+## 🚀 Полный workflow
+
+```bash
+# 1. Запустить кластер
+docker-compose -f docker-compose-elk.yml up -d
+docker-compose -f docker-compose-kafka.yml up -d
+
+# 2. Проверить статус
+curl -s "http://localhost:9200/_cluster/health?pretty"
+
+# 3. Включить репликацию (если нужно)
+curl -X PUT "http://localhost:9200/_settings" -H 'Content-Type: application/json' -d'
+{
+  "index": {
+    "number_of_replicas": 1
+  }
+}'
+
+# 4. Запустить генерацию данных
+cd python
+python producer_bot.py &
+python consumer_to_es.py &
+
+# 5. Сгенерировать трафик Nginx
+for i in {1..200}; do
+  curl -s http://localhost:8080/ > /dev/null
+  echo -n "."
+  sleep 0.1
+done
+echo ""
+
+# 6. Открыть Kibana и создать дашборд
+echo "http://localhost:5601"
+```
+
+---
