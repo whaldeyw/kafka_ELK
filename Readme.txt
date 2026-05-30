@@ -1,6 +1,6 @@
-# 📚 Полная инструкция: ELK + Kafka + Nginx Stack (Версия 2.0 — Кластер из 2 нод)
+       Полная инструкция: ELK + Kafka + Nginx Stack (Версия 2.0 — Кластер из 2 нод)
 
-## 📋 Схема взаимодействия компонентов
+📋 Схема взаимодействия компонентов
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────────────┐     ┌─────────────┐
@@ -22,30 +22,30 @@
                     └─────────────┘
 ```
 
-## 🔄 Три потока данных (с репликацией!)
+       Три потока данных (с репликацией!)
 
-### Поток 1: Nginx → Logstash → Elasticsearch
+       Поток 1: Nginx → Logstash → Elasticsearch
 - Nginx пишет логи в `/var/log/nginx/access.log`
 - Logstash читает файл, парсит строки в JSON
 - Logstash отправляет в Elasticsearch
 - **Репликация:** данные автоматически копируются на вторую ноду
 
-### Поток 2: Python → Kafka → Logstash → Elasticsearch
+        Поток 2: Python → Kafka → Logstash → Elasticsearch
 - Python-продюсер генерирует события
 - Kafka хранит события в топиках (`user_login`, `payment`, `item_view`)
 - Logstash читает из Kafka, преобразует и отправляет в Elasticsearch
 - **Репликация:** данные дублируются между нодами
 
-### Поток 3: Python → Kafka → Python → Elasticsearch (альтернативный)
+       Поток 3: Python → Kafka → Python → Elasticsearch (альтернативный)
 - Python-продюсер → Kafka
 - Python-консьюмер читает из Kafka и пишет напрямую в Elasticsearch
 - **Репликация:** данные дублируются между нодами
 
 ---
 
-## 🚀 Пошаговая инструкция развертывания
+       Пошаговая инструкция развертывания
 
-### Предварительные требования
+       Предварительные требования
 
 ```bash
 # Проверка установленного ПО
@@ -62,7 +62,7 @@ pip3 --version
 
 ---
 
-### Шаг 1: Создание структуры папок
+        Шаг 1: Создание структуры папок
 
 ```bash
 # Создаем главную директорию проекта
@@ -75,9 +75,9 @@ mkdir -p logstash/pipeline nginx nginx/html python
 
 ---
 
-### Шаг 2: Docker Compose файлы
+       Шаг 2: Docker Compose файлы
 
-#### Файл `docker-compose-elk.yml` (ELK кластер + Nginx)
+        Файл `docker-compose-elk.yml` (ELK кластер + Nginx)
 
 ```yaml
 version: '3.8'
@@ -187,7 +187,7 @@ volumes:
   nginx-logs:
 ```
 
-#### Файл `docker-compose-kafka.yml` (Kafka отдельно)
+       Файл `docker-compose-kafka.yml` (Kafka отдельно)
 
 ```yaml
 version: '3.8'
@@ -223,9 +223,9 @@ volumes:
 
 ---
 
-### Шаг 3: Конфигурационные файлы (без изменений)
+        Шаг 3: Конфигурационные файлы (без изменений)
 
-#### Nginx: `nginx/nginx.conf`
+       Nginx: `nginx/nginx.conf`
 
 ```nginx
 events {
@@ -256,7 +256,7 @@ http {
 </html>
 ```
 
-#### Logstash Nginx: `logstash/pipeline/nginx.conf`
+        Logstash Nginx: `logstash/pipeline/nginx.conf`
 
 ```ruby
 input {
@@ -289,7 +289,7 @@ output {
 }
 ```
 
-#### Logstash Kafka: `logstash/pipeline/kafka.conf`
+        Logstash Kafka: `logstash/pipeline/kafka.conf`
 
 ```ruby
 input {
@@ -319,9 +319,9 @@ output {
 
 ---
 
-### Шаг 4: Python скрипты (без изменений)
+        Шаг 4: Python скрипты (без изменений)
 
-#### Продюсер: `python/producer_bot.py`
+        Продюсер: `python/producer_bot.py`
 
 ```python
 import json
@@ -352,7 +352,7 @@ while True:
     time.sleep(2)
 ```
 
-#### Консьюмер: `python/consumer_to_es.py`
+        Консьюмер: `python/consumer_to_es.py`
 
 ```python
 import json
@@ -369,7 +369,7 @@ consumer = KafkaConsumer(
     value_deserializer=lambda m: json.loads(m.decode('utf-8'))
 )
 
-# Elasticsearch connection (версия 7.x)
+ Elasticsearch connection (версия 7.x)
 es = Elasticsearch(['http://localhost:9200'])
 
 if es.ping():
@@ -390,45 +390,45 @@ for message in consumer:
 
 ---
 
-### Шаг 5: Запуск стека
+        Шаг 5: Запуск стека
 
 ```bash
-# 1. Создаем общую сеть
+ 1. Создаем общую сеть
 docker network create kafka_elastic_elk-net 2>/dev/null || true
 
-# 2. Запускаем ELK кластер
+ 2. Запускаем ELK кластер
 cd ~/projects/elk-kafka-stack
 docker-compose -f docker-compose-elk.yml up -d
 
-# 3. Проверяем запуск
+ 3. Проверяем запуск
 docker ps
 
-# 4. Запускаем Kafka
+ 4. Запускаем Kafka
 docker-compose -f docker-compose-kafka.yml up -d
 
-# 5. Проверяем кластер Elasticsearch
+ 5. Проверяем кластер Elasticsearch
 curl -s "http://localhost:9200/_cluster/health?pretty"
-# Должно быть: "status" : "green", "number_of_nodes" : 2
+ Должно быть: "status" : "green", "number_of_nodes" : 2
 
-# 6. Проверяем все контейнеры
+#6. Проверяем все контейнеры
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 ```
 
 ---
 
-### Шаг 6: Проверка работоспособности
+ Шаг 6: Проверка работоспособности
 
 ```bash
-# 1. Проверка Elasticsearch
+ 1. Проверка Elasticsearch
 curl http://localhost:9200
 
-# 2. Проверка Kibana
-# http://localhost:5601
+ 2. Проверка Kibana
+ http://localhost:5601
 
-# 3. Проверка Nginx
+ 3. Проверка Nginx
 curl http://localhost:8080
 
-# 4. Генерация трафика для Nginx
+ 4. Генерация трафика для Nginx
 for i in {1..100}; do
     curl -s http://localhost:8080/ > /dev/null
     echo -n "."
@@ -436,42 +436,42 @@ for i in {1..100}; do
 done
 echo ""
 
-# 5. Проверка индексов Elasticsearch
+5. Проверка индексов Elasticsearch
 curl -s "http://localhost:9200/_cat/indices?v" | grep -E "nginx|kafka|app"
 
-# 6. Запуск Python продюсера
+ 6. Запуск Python продюсера
 cd python
 python producer_bot.py &
-# (Ctrl+C для остановки)
+ (Ctrl+C для остановки)
 
-# 7. Запуск Python консьюмера
+ 7. Запуск Python консьюмера
 python consumer_to_es.py &
 ```
 
 ---
 
-### Шаг 7: Мониторинг кластера и шардов
+Шаг 7: Мониторинг кластера и шардов
 
 ```bash
-# 1. Здоровье кластера
+ 1. Здоровье кластера
 curl -s "http://localhost:9200/_cluster/health?pretty"
 
-# 2. Список нод
+ 2. Список нод
 curl -s "http://localhost:9200/_cat/nodes?v"
 
-# 3. Распределение шардов
+ 3. Распределение шардов
 curl -s "http://localhost:9200/_cat/shards?v" | grep -E "app|nginx|kafka"
 
-# 4. Размер сегментов
+ 4. Размер сегментов
 curl -s "http://localhost:9200/_cat/segments?v" | head -20
 
-# 5. Использование памяти
+ 5. Использование памяти
 curl -s "http://localhost:9200/_nodes/stats/jvm" | grep -E "heap_used_percent|node_name"
 ```
 
 ---
 
-### Шаг 8: Настройка репликации
+ Шаг 8: Настройка репликации
 
 ```bash
 # Включаем репликацию для всех индексов (по 1 реплике)
@@ -488,36 +488,36 @@ watch -n 2 'curl -s "http://localhost:9200/_cat/shards?v" | grep -E "app|nginx|k
 
 ---
 
-## 📊 Полезные команды для мониторинга (обновленные)
+       Полезные команды для мониторинга (обновленные)
 
 ```bash
-# Проверка индексов с репликами
+ Проверка индексов с репликами
 curl -s "http://localhost:9200/_cat/indices?v"
 
-# Распределение шардов по нодам
+ Распределение шардов по нодам
 curl -s "http://localhost:9200/_cat/shards?v"
 
-# Статистика по нодам
+ Статистика по нодам
 curl -s "http://localhost:9200/_cat/nodes?v"
 
-# Просмотр топиков Kafka
+Просмотр топиков Kafka
 docker exec -it kafka-sandbox /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092
 
-# Consumer groups
+ Consumer groups
 docker exec -it kafka-sandbox /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
 
-# Детали по группе Logstash
+ Детали по группе Logstash
 docker exec -it kafka-sandbox /opt/kafka/bin/kafka-consumer-groups.sh \
   --bootstrap-server localhost:9092 \
   --describe --group logstash-group
 
-# Логи Logstash
+Логи Logstash
 docker logs -f logstash-sandbox
 ```
 
 ---
 
-## 🎯 Три статуса здоровья кластера (Cluster Health)
+       ри статуса здоровья кластера (Cluster Health)
 
 | Статус | Значение | Что делать |
 |--------|----------|------------|
@@ -527,20 +527,20 @@ docker logs -f logstash-sandbox
 
 ---
 
-## 🔧 Устранение неполадок (обновленная версия)
+       Устранение неполадок (обновленная версия)
 
-### Проблема: Индексы остаются желтыми (yellow) после включения реплик
+       Проблема: Индексы остаются желтыми (yellow) после включения реплик
 **Решение:** Проверить, что обе ноды видят друг друга:
 ```bash
-# Проверить ноды в кластере
+Проверить ноды в кластере
 curl -s "http://localhost:9200/_cat/nodes?v"
-# Должно быть 2 ноды
+Должно быть 2 ноды
 
-# Если одна нода, проверить логи
+ Если одна нода, проверить логи
 docker logs elastic-sandbox-2 --tail 50
 ```
 
-### Проблема: Logstash пишет в одну ноду
+Проблема: Logstash пишет в одну ноду
 **Решение:** Обновить конфиг с обоими хостами:
 ```ruby
 elasticsearch {
@@ -548,8 +548,7 @@ elasticsearch {
   index => "nginx-logs-%{+YYYY.MM.dd}"
 }
 ```
-
-### Проблема: Реплики не распределяются равномерно
+ Проблема: Реплики не распределяются равномерно
 **Решение:** Включить балансировку:
 ```bash
 curl -X PUT "http://localhost:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
@@ -562,22 +561,22 @@ curl -X PUT "http://localhost:9200/_cluster/settings" -H 'Content-Type: applicat
 
 ---
 
-## 🏁 Финальная проверка кластера
+ 🏁 Финальная проверка кластера
 
 ```bash
-# 1. Здоровье кластера (должен быть green)
+ 1. Здоровье кластера (должен быть green)
 curl -s "http://localhost:9200/_cluster/health?pretty"
 
-# 2. Количество нод (должно быть 2)
+ 2. Количество нод (должно быть 2)
 curl -s "http://localhost:9200/_cat/nodes?v" | wc -l
 
-# 3. Распределение шардов (для каждого индекса должны быть p и r)
+ 3. Распределение шардов (для каждого индекса должны быть p и r)
 curl -s "http://localhost:9200/_cat/shards?v" | grep -E "app|nginx|kafka"
 
-# 4. Количество документов
+ 4. Количество документов
 curl -s "http://localhost:9200/_cat/indices?v" | grep -E "app|nginx|kafka"
 
-# 5. Проверка consumer groups (LAG должен быть 0)
+ 5. Проверка consumer groups (LAG должен быть 0)
 docker exec -it kafka-sandbox /opt/kafka/bin/kafka-consumer-groups.sh \
   --bootstrap-server localhost:9092 --describe --group logstash-group
 docker exec -it kafka-sandbox /opt/kafka/bin/kafka-consumer-groups.sh \
@@ -585,17 +584,17 @@ docker exec -it kafka-sandbox /opt/kafka/bin/kafka-consumer-groups.sh \
 ```
 
 
-✅ **2 ноды Elasticsearch** — отказоустойчивый кластер  
-✅ **Репликация данных** — каждая запись хранится в двух экземплярах  
-✅ **Зеленый статус** — все шарды распределены правильно  
-✅ **Балансировка нагрузки** — запросы распределяются между нодами  
-✅ **Kafka** — буферизация событий  
-✅ **Logstash** — парсинг логов и чтение из Kafka  
-✅ **Kibana** — визуализация  
-✅ **Python** — генерация и потребление событий  
+2 ноды Elasticsearch** — отказоустойчивый кластер  
+Репликация данных** — каждая запись хранится в двух экземплярах  
+Зеленый статус** — все шарды распределены правильно  
+Балансировка нагрузки** — запросы распределяются между нодами  
+Kafka** — буферизация событий  
+Logstash** — парсинг логов и чтение из Kafka  
+Kibana** — визуализация  
+Python** — генерация и потребление событий  
 
-**Размер кластера:** 2 ноды  
-**Репликация:** 1 реплика на каждый индекс  
-**Отказоустойчивость:** при падении одной ноды данные не теряются  
-**Производительность:** параллельная обработка запросов на двух нодах
+Размер кластера:2 ноды  
+Репликация: 1 реплика на каждый индекс  
+Отказоустойчивость: при падении одной ноды данные не теряются  
+Производительность: параллельная обработка запросов на двух нодах
 
